@@ -81,4 +81,6 @@ StringFog 是构建期 Android 字节码转换器，并附带一组精简的运�
 
 ## 发布
 
-每个可发布模块应用 `maven_local.gradle` 定义现有 `MavenPublication`。插件模块的 `java-gradle-plugin.automatedPublishing` 为 `false`，避免改变原有发布坐标；Maven Central 发布配置仍在 `maven_nexus.gradle` 中并由模块注释。普通开发和验证不得启用签名、读取发布凭据或执行远端发布。
+每个可发布模块应用 `maven_local.gradle` 定义现有 `MavenPublication`。普通构建继续使用 `com.github.megatronking.stringfog` 和模块 `VERSION`；当 `JITPACK=true` 时，脚本改用 JitPack 提供的 `GROUP.ARTIFACT` 与 Git 标签 `VERSION`，形成 `com.github.xs93.StringFog:<artifactId>:<tag>`。`jitpack.yml` 固定使用 JDK 17，并执行 `build publishToMavenLocal`。
+
+插件模块的 `java-gradle-plugin.automatedPublishing` 为 `false`，避免改变原有发布坐标；Maven Central 发布配置仍在 `maven_nexus.gradle` 中并由模块注释。普通开发和验证不得启用签名、读取发布凭据或执行远端发布。

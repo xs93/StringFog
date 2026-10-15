@@ -1,12 +1,18 @@
 apply plugin: 'maven-publish'
 
+def isJitPack = System.getenv('JITPACK') == 'true'
+def publicationGroup = isJitPack
+        ? "${System.getenv('GROUP')}.${System.getenv('ARTIFACT')}"
+        : GROUP
+def publicationVersion = isJitPack ? System.getenv('VERSION') : VERSION
+
 publishing {
     publications {
         StringFogPlugin(MavenPublication) {
             from components.java
-            groupId = GROUP
+            groupId = publicationGroup
             artifactId = ARTIFACTID
-            version = VERSION
+            version = publicationVersion
         }
     }
 }

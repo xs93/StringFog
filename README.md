@@ -139,6 +139,42 @@ dependencies {
 
 两种模式都使用`InstrumentationScope.PROJECT`：app不会重复处理依赖库，library和dynamic-feature分别处理自己的代码。AGP 9使用内置Kotlin支持，Android模块不要再应用旧的`org.jetbrains.kotlin.android`插件。
 
+##### 4、通过JitPack使用
+
+仓库发布`6.0.0`标签并由JitPack构建成功后，将JitPack仓库同时加入buildscript和普通依赖仓库：
+
+```groovy
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+    dependencies {
+        classpath 'com.github.xs93.StringFog:gradle-plugin:6.0.0'
+        classpath 'com.github.xs93.StringFog:xor:6.0.0'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+根配置中的运行时依赖相应改为：
+
+```groovy
+stringfog {
+    implementation = 'com.github.megatronking.stringfog.xor.StringFogImpl'
+    runtimeDependency = 'com.github.xs93.StringFog:xor:6.0.0'
+}
+```
+
+JitPack多模块坐标格式为`com.github.xs93.StringFog:<模块artifactId>:<Git标签>`。本仓库会发布`gradle-plugin`、`core`、`interface`和`xor`四个模块；JitPack构建使用JDK 17，并执行全量`build`和`publishToMavenLocal`。
 
 ### 扩展
 
