@@ -12,9 +12,10 @@ import java.security.SecureRandom;
  */
 public class RandomKeyGenerator implements IKeyGenerator {
 
+    private static final long serialVersionUID = 1L;
     private static final int DEFAULT_LENGTH = 8;
 
-    private final SecureRandom mSecureRandom;
+    private transient volatile SecureRandom mSecureRandom;
     private final int mLength;
 
     public RandomKeyGenerator() {
@@ -29,8 +30,22 @@ public class RandomKeyGenerator implements IKeyGenerator {
     @Override
     public byte[] generate(String text) {
         byte[] key = new byte[mLength];
-        mSecureRandom.nextBytes(key);
+        getSecureRandom().nextBytes(key);
         return key;
+    }
+
+    private SecureRandom getSecureRandom() {
+        SecureRandom secureRandom = mSecureRandom;
+        if (secureRandom == null) {
+            synchronized (this) {
+                secureRandom = mSecureRandom;
+                if (secureRandom == null) {
+                    secureRandom = new SecureRandom();
+                    mSecureRandom = secureRandom;
+                }
+            }
+        }
+        return secureRandom;
     }
 
 }

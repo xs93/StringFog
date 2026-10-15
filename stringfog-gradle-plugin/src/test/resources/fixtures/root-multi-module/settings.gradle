@@ -1,0 +1,20 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        maven {
+            url = uri(System.getProperty('stringfog.test.repository'))
+        }
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'stringfog-root-multi-module-test'
+include ':app', ':library-java', ':library-kotlin', ':excluded-library'

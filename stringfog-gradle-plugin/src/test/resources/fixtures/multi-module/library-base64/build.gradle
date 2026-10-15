@@ -1,0 +1,27 @@
+import com.github.megatronking.stringfog.plugin.StringFogMode
+import com.github.megatronking.stringfog.plugin.kg.HardCodeKeyGenerator
+
+plugins {
+    id 'com.android.library'
+    id 'stringfog'
+}
+
+android {
+    namespace = 'com.example.base64'
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 23
+    }
+}
+
+stringfog {
+    implementation = 'com.github.megatronking.stringfog.xor.StringFogImpl'
+    fogPackages = ['com.example.base64']
+    kg = new HardCodeKeyGenerator('base64-key')
+    mode = StringFogMode.base64
+}
+
+dependencies {
+    implementation files(rootProject.ext.stringFogRuntimeClasspath)
+}

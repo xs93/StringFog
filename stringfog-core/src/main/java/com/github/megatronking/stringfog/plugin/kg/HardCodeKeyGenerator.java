@@ -12,6 +12,8 @@ import java.nio.charset.StandardCharsets;
  */
 public class HardCodeKeyGenerator implements IKeyGenerator {
 
+    private static final long serialVersionUID = 1L;
+
     private final byte[] mKey;
 
     public HardCodeKeyGenerator(String key) {
@@ -19,12 +21,12 @@ public class HardCodeKeyGenerator implements IKeyGenerator {
     }
 
     public HardCodeKeyGenerator(byte[] key) {
-        mKey = key;
+        mKey = key.clone();
     }
 
     @Override
     public byte[] generate(String text) {
-        return mKey;
+        return mKey.clone();
     }
-    
+
 }

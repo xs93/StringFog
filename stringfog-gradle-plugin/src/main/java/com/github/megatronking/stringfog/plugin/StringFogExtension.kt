@@ -1,7 +1,8 @@
 package com.github.megatronking.stringfog.plugin
 
 import com.github.megatronking.stringfog.IKeyGenerator
-import com.github.megatronking.stringfog.plugin.kg.RandomKeyGenerator
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 
 abstract class StringFogExtension {
 
@@ -13,39 +14,36 @@ abstract class StringFogExtension {
     /**
      * The package name of the application or the library.
      */
-    var packageName: String? = null
+    abstract val packageName: Property<String>
 
     /**
      * The algorithm implementation for String encryption and decryption.
      * It is required.
      */
-    var implementation: String? = null
+    abstract val implementation: Property<String>
 
     /**
      * A generator to generate a security key for the encryption and decryption.
-     *
-     * StringFog use a 8 length random key generator default.
      */
-    var kg : IKeyGenerator  = RandomKeyGenerator()
+    abstract val kg: Property<IKeyGenerator>
 
     /**
      * How the encrypted string presents in java class, default is base64.
      */
-    var mode: StringFogMode = base64
+    abstract val mode: Property<StringFogMode>
 
     /**
      * Enable or disable the StringFog plugin. Default is enabled.
      */
-    var enable: Boolean = true
+    abstract val enable: Property<Boolean>
 
     /**
      * Enable or disable the StringFog debug message print. Default is disabled.
      */
-    var debug: Boolean = false
+    abstract val debug: Property<Boolean>
 
     /**
      * The java packages will be applied. Default is effect on all packages.
      */
-    var fogPackages : Array<String> = emptyArray()
-
+    abstract val fogPackages: ListProperty<String>
 }

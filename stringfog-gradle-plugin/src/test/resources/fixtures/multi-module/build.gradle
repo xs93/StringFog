@@ -1,0 +1,8 @@
+plugins {
+    id 'com.android.application' apply false
+    id 'com.android.library' apply false
+}
+
+ext.stringFogRuntimeClasspath = System.getProperty('stringfog.test.runtime.classpath')
+        .split(java.util.regex.Pattern.quote(File.pathSeparator))
+        .collect { file(it) }

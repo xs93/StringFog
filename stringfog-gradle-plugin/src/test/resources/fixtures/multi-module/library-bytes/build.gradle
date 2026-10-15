@@ -1,0 +1,28 @@
+import com.github.megatronking.stringfog.plugin.StringFogMode
+import com.github.megatronking.stringfog.plugin.kg.HardCodeKeyGenerator
+
+plugins {
+    id 'stringfog'
+    id 'com.android.library'
+}
+
+android {
+    namespace = 'com.example.bytes'
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 23
+    }
+}
+
+stringfog {
+    implementation = 'com.github.megatronking.stringfog.xor.StringFogImpl'
+    packageName = 'com.example.bytes.generated'
+    fogPackages = ['com.example.bytes']
+    kg = new HardCodeKeyGenerator('bytes-key')
+    mode = StringFogMode.bytes
+}
+
+dependencies {
+    implementation files(rootProject.ext.stringFogRuntimeClasspath)
+}

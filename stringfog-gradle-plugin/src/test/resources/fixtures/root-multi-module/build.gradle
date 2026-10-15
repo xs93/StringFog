@@ -1,0 +1,17 @@
+import com.github.megatronking.stringfog.plugin.StringFogMode
+import com.github.megatronking.stringfog.plugin.kg.HardCodeKeyGenerator
+
+plugins {
+    id 'stringfog-root'
+    id 'com.android.application' apply false
+    id 'com.android.library' apply false
+}
+
+stringfog {
+    implementation = 'com.github.megatronking.stringfog.xor.StringFogImpl'
+    runtimeDependency = 'com.github.megatronking.stringfog:xor:6.0.0'
+    fogPackages = ['com.example']
+    kg = new HardCodeKeyGenerator('root-key')
+    mode = StringFogMode.base64
+    excludedProjects = [':excluded-library']
+}

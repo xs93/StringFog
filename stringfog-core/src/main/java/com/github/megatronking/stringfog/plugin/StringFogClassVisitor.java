@@ -64,7 +64,9 @@ import java.util.List;
         this.mStringFogImpl = stringFogImpl;
         this.mLogs = logs;
         this.mKeyGenerator = kg;
-        this.mLogs.add(fogClassName);
+        if (this.mLogs != null) {
+            this.mLogs.add(fogClassName);
+        }
         fogClassName = fogClassName.replace('.', '/');
         if (mode == StringFogMode.base64) {
             this.mInstructionWriter = new Base64InstructionWriter(fogClassName);
@@ -253,7 +255,9 @@ import java.util.List;
         byte[] key = mKeyGenerator.generate(value);
         byte[] encryptValue = mStringFogImpl.encrypt(value, key);
         String result = mInstructionWriter.write(key, encryptValue, mv);
-        mLogs.add(value + " -> " + result);
+        if (mLogs != null) {
+            mLogs.add(value + " -> " + result);
+        }
     }
 
     private String getJavaClassName() {

@@ -1,41 +1,69 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    id "java-library"
-    id "org.jetbrains.kotlin.jvm" version "1.8.21"
+    id 'java-gradle-plugin'
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+gradlePlugin {
+    automatedPublishing = false
+    plugins {
+        stringFog {
+            id = 'stringfog'
+            implementationClass = 'com.github.megatronking.stringfog.plugin.StringFogPlugin'
+        }
+        stringFogRoot {
+            id = 'stringfog-root'
+            implementationClass = 'com.github.megatronking.stringfog.plugin.StringFogRootPlugin'
+        }
+    }
+}
+
+configurations {
+    functionalTestAgp {
+        canBeConsumed = false
+        canBeResolved = true
+    }
 }
 
 dependencies {
     implementation gradleApi()
-    implementation localGroovy()
-    implementation 'com.android.tools.build:gradle:8.0.0'
+    compileOnly 'com.android.tools.build:gradle-api:9.4.0'
+    functionalTestAgp 'com.android.tools.build:gradle:9.4.0'
     implementation project(':stringfog-core')
     implementation project(':stringfog-interface')
+
+    testImplementation gradleTestKit()
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.ow2.asm:asm:9.9'
+    testImplementation project(':stringfog-ext:xor')
 }
 
-sourceSets {
-    main {
-        java {
-            srcDir 'src/main/java'
-        }
-        resources {
-            srcDir 'src/main/resources'
-        }
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+kotlin {
+    jvmToolchain(17)
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
     }
 }
 
-tasks.withType(ProcessResources){
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-tasks.withType(Jar){
+tasks.withType(ProcessResources).configureEach {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
+def testRuntimeArtifacts = files(
+        project(':stringfog-interface').layout.buildDirectory.file('libs/stringfog-interface.jar'),
+        project(':stringfog-ext:xor').layout.buildDirectory.file('libs/xor.jar')
+)
 
-tasks {
-    compileKotlin {
-        kotlinOptions.jvmTarget = targetCompatibility
-    }
+tasks.named('test', Test) {
+    dependsOn ':stringfog-interface:jar', ':stringfog-ext:xor:jar'
+    systemProperty 'stringfog.test.runtime.classpath', testRuntimeArtifacts.asPath
+    systemProperty 'stringfog.test.agp.classpath', configurations.functionalTestAgp.asPath
 }
 
 apply from: '../maven_local.gradle'

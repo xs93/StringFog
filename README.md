@@ -38,92 +38,107 @@ decrypt: new byte[]{-113, 71...} => "This is a string!"
 StringFog和混淆完全不冲突，也不需要配置反混淆，实际上StringFog配上混淆效果会更好！
 
 ### 使用
-由于开发了gradle插件，所以在集成时非常简单，不会影响到打包的配置。插件已经上传到MavenCentral，直接引用依赖就可以。
-**jcenter已经废弃，3.0+版本取消发布**
+
+6.0.0版本仅支持AGP 9，当前构建基线为AGP 9.4.0、Gradle 9.6.0和JDK 17。以下为6.0.0发布后的集成方式；本仓库中的开发验证使用本地产物。
 
 ##### 1、在根目录build.gradle中引入插件依赖。
 ```groovy
 buildscript {
     repositories {
+        google()
         mavenCentral()
     }
     dependencies {
-        ...
-        classpath 'com.github.megatronking.stringfog:gradle-plugin:5.2.0'
+        classpath 'com.android.tools.build:gradle:9.4.0'
+        classpath 'com.github.megatronking.stringfog:gradle-plugin:6.0.0'
         // 选用加解密算法库，默认实现了xor算法，也可以使用自己的加解密库。
-        classpath 'com.github.megatronking.stringfog:xor:5.0.0'
+        classpath 'com.github.megatronking.stringfog:xor:6.0.0'
     }
 }
 ```
 
-##### 2、在app或lib的build.gradle中配置插件。
+项目的Gradle Wrapper应使用AGP 9.4.0兼容的9.6.0版本。
+
+##### 2、推荐：在根项目统一配置所有Android子模块
+
+```groovy
+apply plugin: 'stringfog-root'
+
+import com.github.megatronking.stringfog.plugin.StringFogMode
+import com.github.megatronking.stringfog.plugin.kg.RandomKeyGenerator
+
+stringfog {
+    // 必要：构建期使用的加解密实现类。
+    implementation = 'com.github.megatronking.stringfog.xor.StringFogImpl'
+    // 必要：自动添加到每个目标Android模块implementation配置的运行时依赖。
+    runtimeDependency = 'com.github.megatronking.stringfog:xor:6.0.0'
+    // 可选：默认加密每个模块的全部项目代码。
+    fogPackages = ['com.xxx.xxx']
+    kg = new RandomKeyGenerator()
+    mode = StringFogMode.base64
+    // 可选：不自动应用插件、不添加运行时依赖的模块路径。
+    excludedProjects = [':sample', ':benchmark']
+}
+```
+
+根插件会自动处理所有`com.android.application`、`com.android.library`和`com.android.dynamic-feature`子模块。普通子模块只需应用自己的Android插件，无需再声明`stringfog`、`stringfog {}`或xor运行时依赖：
+
+```groovy
+plugins {
+    id 'com.android.library'
+}
+```
+
+每个模块仍使用自己的`namespace`生成独立的`StringFog`类，并只转换本模块代码，因此library输出的AAR本身也是已加密产物。`com.android.dynamic-feature`指依附基础app、可按需或安装时交付的App Bundle动态功能模块；项目未使用此类模块时不会产生额外行为。
+
+Kotlin DSL根配置参考：
+
+```kotlin
+import com.github.megatronking.stringfog.plugin.StringFogMode
+import com.github.megatronking.stringfog.plugin.StringFogRootExtension
+import com.github.megatronking.stringfog.plugin.kg.RandomKeyGenerator
+
+apply(plugin = "stringfog-root")
+
+configure<StringFogRootExtension> {
+    implementation.set("com.github.megatronking.stringfog.xor.StringFogImpl")
+    runtimeDependency.set("com.github.megatronking.stringfog:xor:6.0.0")
+    fogPackages.set(listOf("com.xxx.xxx"))
+    kg.set(RandomKeyGenerator())
+    mode.set(StringFogMode.base64)
+    excludedProjects.set(setOf(":sample", ":benchmark"))
+}
+```
+
+根项目模式支持Configuration Cache和并行构建。Gradle Isolated Projects禁止root Project插件跨项目配置，因此该模式暂不支持Isolated Projects。
+
+##### 3、可选：单个模块独立配置
+
+被根配置排除的模块，或不使用`stringfog-root`的单模块项目，仍可直接应用原有插件：
+
 ```groovy
 apply plugin: 'stringfog'
 
-// 导入RandomKeyGenerator类，如果使用HardCodeKeyGenerator，更换下类名
-import com.github.megatronking.stringfog.plugin.kg.RandomKeyGenerator
 import com.github.megatronking.stringfog.plugin.StringFogMode
+import com.github.megatronking.stringfog.plugin.kg.RandomKeyGenerator
 
 stringfog {
-    // 必要：加解密库的实现类路径，需和上面配置的加解密算法库一致。
-    implementation 'com.github.megatronking.stringfog.xor.StringFogImpl'
-    // 可选：StringFog会自动尝试获取packageName，如果遇到获取失败的情况，可以显式地指定。
-    packageName 'com.github.megatronking.stringfog.app'
-    // 可选：加密开关，默认开启。
-    enable true
-    // 可选：指定需加密的代码包路径，可配置多个，未指定将默认全部加密。
-    fogPackages = ['com.xxx.xxx']
-    // 可选（3.0版本新增）：指定密钥生成器，默认使用长度8的随机密钥（每个字符串均有不同随机密钥）,
-    // 也可以指定一个固定的密钥：HardCodeKeyGenerator("This is a key")
-    kg new RandomKeyGenerator()
-    // 可选（4.0版本新增）：用于控制字符串加密后在字节码中的存在形式, 默认为base64，
-    // 也可以使用text或者bytes
-    mode StringFogMode.base64
-}
-```
-
-kts中配置参考
-```kotlin
-plugins {
-    //...lib or application
-    id("stringfog")
-}
-apply(plugin = "stringfog")
-
-configure<StringFogExtension> {
-    // 必要：加解密库的实现类路径，需和上面配置的加解密算法库一致。
-    implementation = "com.github.megatronking.stringfog.xor.StringFogImpl"
-    // 可选：加密开关，默认开启。
+    implementation = 'com.github.megatronking.stringfog.xor.StringFogImpl'
+    // 可选：默认使用当前模块namespace；设置后将覆盖namespace。
+    packageName = 'com.github.megatronking.stringfog.app'
     enable = true
-    // 可选：指定需加密的代码包路径，可配置多个，未指定将默认全部加密。
-    // fogPackages = arrayOf("com.xxx.xxx")
-    kg = com.github.megatronking.stringfog.plugin.kg.RandomKeyGenerator()
-    // base64或者bytes
-    mode = com.github.megatronking.stringfog.plugin.StringFogMode.bytes
+    fogPackages = ['com.xxx.xxx']
+    kg = new RandomKeyGenerator()
+    mode = StringFogMode.base64
 }
-```
 
-##### 3、在app或lib的build.gradle中引入加解密库依赖。
-
-```groovy
 dependencies {
-      ...
-      // 这里要和上面选用的加解密算法库一致，用于运行时解密。
-      compile 'com.github.megatronking.stringfog:xor:5.0.0'
+    implementation 'com.github.megatronking.stringfog:xor:6.0.0'
 }
 ```
 
-##### 注意事项
-从AGP 8.0开始，默认不生成BuildConfig，但是StringFog依赖此配置，请注意加上下面的配置。
-```kotlin
-android {
-    // 注意请加上此配置
-    buildFeatures {
-        buildConfig = true
-    }
-    ...
-}
-```
+两种模式都使用`InstrumentationScope.PROJECT`：app不会重复处理依赖库，library和dynamic-feature分别处理自己的代码。AGP 9使用内置Kotlin支持，Android模块不要再应用旧的`org.jetbrains.kotlin.android`插件。
+
 
 ### 扩展
 
@@ -163,10 +178,10 @@ public final class StringFogImpl implements IStringFog {
 ```
 
 #### 自定义密钥生成器
-实现IKeyGenerator接口，参考RandomKeyGenerator的实现。
+实现IKeyGenerator接口，参考RandomKeyGenerator的实现。AGP 9版本会把密钥生成器作为Gradle托管的插桩参数，因此实现类及其全部字段必须可序列化；不要在实现中保存Project、Variant、Task等Gradle配置对象。
 
 #### Mapping文件
-**注意⚠️：StringFog 5.x版本起有问题，已暂时停用此功能**
+**注意⚠️：从5.0版本起该功能仍处于停用状态**
 加解密的字符串明文和暗文会自动生成mapping映射文件，位于outputs/mapping/stringfog.txt。
 
 ## 范例
@@ -174,6 +189,14 @@ public final class StringFogImpl implements IStringFog {
 - 自定义加解密算法集成，参考[sample2](https://github.com/MegatronKing/StringFog-Sample2)
 
 ## 更新日志
+
+### v6.0.0
+- 仅支持AGP 9，构建基线升级到AGP 9.4.0、Gradle 9.6.0、JDK 17和ASM 9.9。
+- 源码生成迁移到公开的Android Components Variant/Sources API，移除`BaseVariant`等旧API。
+- 插桩配置改为Gradle托管参数，移除进程级单例、弱引用和共享日志，支持多模块并行构建及Configuration Cache。
+- 新增`stringfog-root`根项目插件，可自动为所有Android子模块应用插件、下发统一配置并添加运行时算法依赖。
+- 新增app + 多library的TestKit集成测试，分别验证base64/bytes模式、Java/Kotlin字节码和模块配置隔离。
+- 自定义`IKeyGenerator`及其字段必须可序列化。
 
 ### v5.2.0
 - 从ASM7升级到ASM9。

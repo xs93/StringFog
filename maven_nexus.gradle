@@ -34,7 +34,7 @@ java {
     withSourcesJar()
 }
 
-tasks.withType(Javadoc) {
+tasks.withType(Javadoc).configureEach {
     options.addStringOption('Xdoclint:none', '-quiet')
 }
 
@@ -75,7 +75,7 @@ publishing {
         maven {
             def releasesRepoUrl = getReleaseRepositoryUrl()
             def snapshotsRepoUrl = getSnapshotRepositoryUrl()
-            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            url = VERSION.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
             credentials {
                 username = getRepositoryUsername()
                 password = getRepositoryPassword()

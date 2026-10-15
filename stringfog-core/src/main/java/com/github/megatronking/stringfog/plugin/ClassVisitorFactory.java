@@ -36,6 +36,12 @@ public final class ClassVisitorFactory {
     private ClassVisitorFactory() {
     }
 
+    public static ClassVisitor create(IStringFog stringFogImpl,
+                                      String[] fogPackages, IKeyGenerator kg, String fogClassName,
+                                      String className, StringFogMode mode, ClassVisitor cv) {
+        return create(stringFogImpl, null, fogPackages, kg, fogClassName, className, mode, cv);
+    }
+
     public static ClassVisitor create(IStringFog stringFogImpl, List<String> logs,
                                       String[] fogPackages, IKeyGenerator kg, String fogClassName,
                                       String className, StringFogMode mode, ClassVisitor cv) {
